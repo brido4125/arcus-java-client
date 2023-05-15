@@ -708,15 +708,16 @@ public abstract class TCPMemcachedNodeImpl extends SpyObject
 
     while (hasReadOp()) {
       Operation op = removeCurrentReadOp();
+      if (cancelNonIdempotent && !op.isIdempotentOperation()) {
+        op.cancel("by moving idempotent operations only");
+      }
       if (op == getCurrentWriteOp()) {
         /* Operation could exist both writeQ and readQ,
          * if all bytes of the operation have not been written yet.
          */
-      } else if (cancelNonIdempotent && !op.isIdempotentOperation()) {
-        op.cancel("by moving idempotent operations only");
-      } else {
-        allOp.add(op);
+        continue;
       }
+      allOp.add(op);
     }
 
     if (hasWriteOp()) {
