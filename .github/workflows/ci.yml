@@ -36,8 +36,13 @@ jobs:
         sudo make altinstall
       
         export PYTHONPATH=/usr/bin/python2.7
-    - name: Check python version
-      run: python -v
+    - name: Change Python Version
+      run:
+        sudo update-alternatives --install /usr/bin/python python /usr/bin/python2.7 1
+        sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.8 2
+    - name: Check Python Version
+      run:
+        python -v
     - name: Caching PIP
       id: python_cache
       uses: actions/cache@v3
