@@ -21,9 +21,8 @@ jobs:
         cache: 'maven'
     - name: Setup Python
       run:
-        # Install Python 2.7
         wget https://www.python.org/ftp/python/2.7/Python-2.7.tgz
-        # Extract Python 2.7
+        
         tar -xvfz Python-2.7.tgz
     - name: Caching PIP
       id: python_cache
