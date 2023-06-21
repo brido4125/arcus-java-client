@@ -29,13 +29,13 @@ jobs:
       run:
         cd Python-2.7
       
-        ./configure --enable-optimizations
+        ./configure --prefix=/usr/bin
       
         make
       
         sudo make altinstall
       
-        alias python=python2.7
+        export PYTHONPATH=/usr/bin/python2.7
     - name: Caching PIP
       id: python_cache
       uses: actions/cache@v3
