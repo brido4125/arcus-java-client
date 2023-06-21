@@ -29,11 +29,11 @@ jobs:
       run:
         cd Python-2.7
       
-        ./configure --prefix=/usr/local
+        ./configure --enable-optimizations
       
         make
       
-        sudo make install
+        sudo make altinstall
     - name: Caching PIP
       id: python_cache
       uses: actions/cache@v3
