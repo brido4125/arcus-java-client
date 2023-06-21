@@ -37,7 +37,7 @@ jobs:
       
         export PYTHONPATH=/usr/bin/python2.7
     - name: Check python version
-      run: python --v
+      run: python -v
     - name: Caching PIP
       id: python_cache
       uses: actions/cache@v3
