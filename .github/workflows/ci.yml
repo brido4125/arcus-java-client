@@ -19,12 +19,14 @@ jobs:
         java-version: '11'
         distribution: 'temurin'
         cache: 'maven'
-    - name: Setup Python
+    - name: Download Python2
       run:
         wget https://www.python.org/ftp/python/2.7/Python-2.7.tgz
-        
+    - name: unzip Python2
+      run:
         tar xvf Python-2.7.tgz
-      
+    - name: Install Python2
+      run:
         cd Python-2.7
       
         ./configure --prefix=/usr/local
@@ -32,8 +34,6 @@ jobs:
         make
       
         sudo make install
-      
-        sudo ln -s /usr/local/bin/python2.7 /usr/bin/python2.7
     - name: Caching PIP
       id: python_cache
       uses: actions/cache@v3
