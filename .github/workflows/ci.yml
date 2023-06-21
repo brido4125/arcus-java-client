@@ -34,6 +34,8 @@ jobs:
         make
       
         sudo make altinstall
+      
+        alias python=python2.7
     - name: Caching PIP
       id: python_cache
       uses: actions/cache@v3
