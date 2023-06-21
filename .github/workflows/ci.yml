@@ -23,7 +23,7 @@ jobs:
       run:
         wget https://www.python.org/ftp/python/2.7/Python-2.7.tgz
         
-        tar -xvfz Python-2.7.tgz
+        tar xvf Python-2.7.tgz
     - name: Caching PIP
       id: python_cache
       uses: actions/cache@v3
