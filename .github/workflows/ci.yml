@@ -38,7 +38,7 @@ jobs:
         export PYTHONPATH=/usr/bin/python2.7.10
     - name: Change Python Version
       run:
-        sudo update-alternatives --install /usr/bin/python python /usr/bin/python2.7.10 1
+        sudo update-alternatives --install /usr/bin/python python /usr/bin/python2.7 1
     - name: Check Python Version
       run:
         python -v
