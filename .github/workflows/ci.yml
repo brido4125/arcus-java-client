@@ -6,7 +6,7 @@ on:
     - master
   pull_request:
     branches:
-    - master
+    - develop
 
 jobs:
   test:
@@ -48,6 +48,19 @@ jobs:
       with:
         path: venv
         key: pip-${{ steps.setup_python.outputs.python-version }}-${{ hashFiles('requirements.txt') }}
+    - name: Setup Not Exist PIP
+      if: steps.python_cache.outputs.cache-hit != 'true'
+      run: |
+        # Check if venv exists (restored from secondary keys if any, and delete)
+        # You might not need this line if you only have one primary key for the venv caching
+        # I kept it in my code as a fail-safe
+        if [ -d "venv" ]; then rm -rf venv; fi
+        pip install virtualenv
+        
+        # Re-create the venv
+        virtualenv -p /usr/bin/python2.7 venv
+        
+        source venv/bin/activate
     - name: Update apt-get
       run: sudo apt-get update
     - name: Install ARCUS Dependencies
