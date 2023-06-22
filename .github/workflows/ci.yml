@@ -36,6 +36,8 @@ jobs:
         sudo make altinstall
     - name: Change Python Version
       run:
+        export PATH="/usr/bin/python2.7:$PATH"
+        
         sudo update-alternatives --install /usr/bin/python python /usr/bin/python2.7 1
     - name: Check Python Version
       run:
