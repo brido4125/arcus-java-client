@@ -39,6 +39,7 @@ jobs:
     - name: Change Python Version
       run:
         sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.8 2
+        
         sudo update-alternatives --install /usr/bin/python python /usr/bin/python2.7 1
     - name: Check Python Version
       run:
