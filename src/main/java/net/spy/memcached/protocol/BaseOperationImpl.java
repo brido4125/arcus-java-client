@@ -94,7 +94,6 @@ public abstract class BaseOperationImpl extends SpyObject {
     synchronized (this) {
       if (!cancelled) {
         cancelled = true;
-        wasCancelled();
         callback.complete();
       }
     }
@@ -103,6 +102,7 @@ public abstract class BaseOperationImpl extends SpyObject {
     } else {
       cancelCause = "Cancelled (" + cause + ")";
     }
+    wasCancelled();
   }
 
   public final String getCancelCause() {
