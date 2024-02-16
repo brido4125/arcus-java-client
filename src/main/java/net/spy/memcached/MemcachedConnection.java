@@ -312,10 +312,11 @@ public final class MemcachedConnection extends SpyObject {
     }
   }
 
-  private void handleNodesToRemove(final List<MemcachedNode> nodesToRemove) {
+  private void handleNodesToRemove(final List<MemcachedNode> nodesToRemove) throws IOException {
     for (MemcachedNode node : nodesToRemove) {
       getLogger().info("old memcached node removed %s", node);
       reconnectQueue.remove(node);
+      node.shutdown();
 
       /* ENABLE_MIGRATION if */
       if (mgType == MigrationType.LEAVE) {
