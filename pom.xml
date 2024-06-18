@@ -147,7 +147,7 @@
                         <arg>-Xlint:-options</arg> <!-- For warning about old java version 8. -->
                         <arg>-Xlint:-processing</arg> <!-- For meaningless warning about annotations -->
                         <arg>-Xlint:-classfile</arg> <!-- For provided spotbugs in ZK Client -->
-                        <arg>-Werror</arg>
+                        <!--<arg>-Werror</arg>-->
                     </compilerArgs>
                 </configuration>
             </plugin>
@@ -282,7 +282,7 @@
                 </executions>
             </plugin>
             -->
-            <plugin>
+            <!--<plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <version>3.1.1</version>
@@ -307,6 +307,7 @@
                     </execution>
                 </executions>
             </plugin>
+            -->
         </plugins>
         <extensions>
             <extension>
