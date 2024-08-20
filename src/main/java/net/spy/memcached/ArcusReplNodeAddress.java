@@ -62,7 +62,7 @@ public class ArcusReplNodeAddress extends InetSocketAddress {
     return group;
   }
 
-  static ArcusReplNodeAddress create(String group, boolean master, String ipport) {
+  public static ArcusReplNodeAddress create(String group, boolean master, String ipport) {
     String[] temp = ipport.split(":");
     String ip = temp[0];
     int port = Integer.parseInt(temp[1]);
@@ -109,7 +109,7 @@ public class ArcusReplNodeAddress extends InetSocketAddress {
     return list;
   }
 
-  static Map<String, List<ArcusReplNodeAddress>> makeGroupAddrsList(
+  public static Map<String, List<ArcusReplNodeAddress>> makeGroupAddrsList(
           List<InetSocketAddress> addrs) {
 
     Map<String, List<ArcusReplNodeAddress>> newAllGroups =

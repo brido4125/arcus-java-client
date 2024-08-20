@@ -29,6 +29,7 @@ import net.spy.memcached.ops.Operation;
 
 public class MockMemcachedNode implements MemcachedNode {
   private final InetSocketAddress socketAddress;
+  private MemcachedReplicaGroup replicaGroup;
 
   public SocketAddress getSocketAddress() {
     return socketAddress;
@@ -260,13 +261,12 @@ public class MockMemcachedNode implements MemcachedNode {
 
   @Override
   public void setReplicaGroup(MemcachedReplicaGroup g) {
-    // noop
+    replicaGroup = g;
   }
 
   @Override
   public MemcachedReplicaGroup getReplicaGroup() {
-    // noop
-    return null;
+    return replicaGroup;
   }
 
   @Override

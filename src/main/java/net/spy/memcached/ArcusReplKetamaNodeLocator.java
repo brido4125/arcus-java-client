@@ -75,7 +75,7 @@ public class ArcusReplKetamaNodeLocator extends SpyObject implements NodeLocator
       mrg = allGroups.get(MemcachedReplicaGroup.getGroupNameFromNode(node));
       if (mrg == null) {
         mrg = new MemcachedReplicaGroupImpl(node);
-        getLogger().info("new memcached replica group added %s", mrg.getGroupName());
+//        getLogger().info("new memcached replica group added %s", mrg.getGroupName());
         allGroups.put(mrg.getGroupName(), mrg);
       } else {
         mrg.setMemcachedNode(node);
@@ -316,7 +316,7 @@ public class ArcusReplKetamaNodeLocator extends SpyObject implements NodeLocator
     mrg = allGroups.get(MemcachedReplicaGroup.getGroupNameFromNode(node));
     if (mrg == null) {
       mrg = new MemcachedReplicaGroupImpl(node);
-      getLogger().info("new memcached replica group added %s", mrg.getGroupName());
+//      getLogger().info("new memcached replica group added %s", mrg.getGroupName());
       allGroups.put(mrg.getGroupName(), mrg);
       insertHash(mrg);
     } else {
