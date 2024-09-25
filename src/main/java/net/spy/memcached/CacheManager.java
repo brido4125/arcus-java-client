@@ -480,6 +480,14 @@ public class CacheManager extends SpyThread implements Watcher,
       return;
     }
 
+    /* New Locator Logic in cache list
+    * List<InetSocketAddress> add = getAdd(addrs);
+    * List<InetSocketAddress> remove = getRemove(addrs);
+    * locator.update(add, remove);
+    * Arrays.stream(client).map(ArcusClient::getMemcachedConnection)
+        .forEach(conn -> conn.updateCacheNodes(add, remove));
+    * */
+
     for (ArcusClient ac : client) {
       MemcachedConnection conn = ac.getMemcachedConnection();
       conn.setCacheNodesChange(addrs);
@@ -557,6 +565,13 @@ public class CacheManager extends SpyThread implements Watcher,
         return false; // startup && caught exception => return false
       }
     } else {
+      /* New Locator Logic in alter list
+       * List<InetSocketAddress> add = getAlterAdd(addrs);
+       * List<InetSocketAddress> remove = getAlterRemove(addrs);
+       * locator.updateAlter(add, remove);
+       * Arrays.stream(client).map(ArcusClient::getMemcachedConnection)
+        .forEach(conn -> conn.updateAlterNodes(add, remove));
+       * */
       for (ArcusClient ac : client) {
         MemcachedConnection conn = ac.getMemcachedConnection();
         conn.setAlterNodesChange(addrs, readingCacheList);
