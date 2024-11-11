@@ -1519,6 +1519,7 @@ public final class MemcachedConnection extends SpyObject {
    * @param op
    */
   public static void opTimedOut(Operation op) {
+    CounterMetrics.addTimeoutOps();
     MemcachedConnection.setTimeout(op, true);
   }
 
@@ -1528,6 +1529,7 @@ public final class MemcachedConnection extends SpyObject {
    * @param ops
    */
   public static void opsTimedOut(Collection<Operation> ops) {
+    CounterMetrics.addTimeoutOps(ops.size());
     Collection<String> timedOutNodes = new HashSet<>();
     for (Operation op : ops) {
       try {

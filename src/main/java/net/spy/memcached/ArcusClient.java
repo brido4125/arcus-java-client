@@ -418,6 +418,12 @@ public class ArcusClient extends FrontCacheMemcachedClient implements ArcusClien
 
     try {
       StatisticsHandler mbean = new StatisticsHandler(this);
+      String counterName = CounterMetrics.class.getPackage().getName() +
+              ":type=CounterMetrics" +
+              ",name=Arcus-CounterMetrics";
+      if (!ArcusMBeanServer.getInstance().isRegistered(counterName)) {
+        ArcusMBeanServer.getInstance().registMBean(CounterMetrics.getInstance(), counterName);
+      }
       ArcusMBeanServer.getInstance().registMBean(
               mbean,
               mbean.getClass().getPackage().getName()

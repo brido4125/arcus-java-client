@@ -22,6 +22,7 @@ import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import net.spy.memcached.CounterMetrics;
 import net.spy.memcached.MemcachedNode;
 import net.spy.memcached.MemcachedReplicaGroup;
 import net.spy.memcached.RedirectHandler;
@@ -95,6 +96,7 @@ public abstract class BaseOperationImpl extends SpyObject {
   public final boolean cancel(String cause) {
     if (callbacked.compareAndSet(false, true)) {
       cancelled = true;
+      CounterMetrics.addCancelOps();
       if (handlingNode != null) {
         cause += " @ " + handlingNode.getNodeName();
       }
@@ -222,6 +224,7 @@ public abstract class BaseOperationImpl extends SpyObject {
     }
     if (state == OperationState.COMPLETE &&
             callbacked.compareAndSet(false, true)) {
+      CounterMetrics.addCompleteOps();
       callback.complete();
     }
   }
