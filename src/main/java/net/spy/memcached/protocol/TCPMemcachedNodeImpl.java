@@ -37,7 +37,6 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import net.spy.memcached.AddrUtil;
 import net.spy.memcached.ArcusReplNodeAddress;
-import net.spy.memcached.CounterMetrics;
 import net.spy.memcached.MemcachedNode;
 import net.spy.memcached.MemcachedReplicaGroup;
 import net.spy.memcached.compat.SpyObject;
@@ -317,6 +316,7 @@ public abstract class TCPMemcachedNodeImpl extends SpyObject
         Operation cancelledOp = removeCurrentWriteOp();
         assert o == cancelledOp;
       } else {
+        o.setStartTime(System.nanoTime());
         o.writing();
         readQ.add(o);
         return o;

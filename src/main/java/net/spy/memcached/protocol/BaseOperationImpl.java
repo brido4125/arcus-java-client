@@ -59,6 +59,16 @@ public abstract class BaseOperationImpl extends SpyObject {
   private OperationType opType = OperationType.UNDEFINED;
   private APIType apiType = APIType.UNDEFINED;
 
+  private long startTime;
+
+  public void setStartTime(long startTime) {
+    this.startTime = startTime;
+  }
+
+  public long getStartTime() {
+    return startTime;
+  }
+
   /* ENABLE_MIGRATION if */
   private RedirectHandler redirectHandler = null;
   /* ENABLE_MIGRATION end */

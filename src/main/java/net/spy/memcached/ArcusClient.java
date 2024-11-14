@@ -421,8 +421,13 @@ public class ArcusClient extends FrontCacheMemcachedClient implements ArcusClien
       String counterName = CounterMetrics.class.getPackage().getName() +
               ":type=CounterMetrics" +
               ",name=Arcus-CounterMetrics";
+      String latencyName = LatencyMetrics.class.getPackage().getName() +
+              ":type=LatencyMetrics" +
+              ",name=Arcus-LatencyMetrics";
       if (!ArcusMBeanServer.getInstance().isRegistered(counterName)) {
         ArcusMBeanServer.getInstance().registMBean(CounterMetrics.getInstance(), counterName);
+      } else if (!ArcusMBeanServer.getInstance().isRegistered(latencyName)) {
+        ArcusMBeanServer.getInstance().registMBean(LatencyMetrics.getInstance(), latencyName);
       }
       ArcusMBeanServer.getInstance().registMBean(
               mbean,
