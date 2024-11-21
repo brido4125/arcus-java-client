@@ -399,6 +399,165 @@ public final class MemcachedConnection extends SpyObject {
     return changedGroupAddrs;
   }
 
+  private void updateReplConnectionsTemp(List<InetSocketAddress> addrs) throws IOException {
+    List<MemcachedNode> attachNodes = new ArrayList<>();
+    List<MemcachedNode> removeNodes = new ArrayList<>();
+    List<MemcachedReplicaGroup> changeRoleGroups = new ArrayList<>();
+    List<Task> taskList = new ArrayList<>(); // tasks executed after locator update
+
+    // Create new group list from the provided addresses
+    Map<String, List<ArcusReplNodeAddress>> newAllGroups =
+            ArcusReplNodeAddress.makeGroupAddrsList(addrs);
+
+    Set<String> invalidGroups = new HashSet<>();
+
+    // Get the existing groups from the locator
+    Map<String, MemcachedReplicaGroup> oldAllGroups =
+            ((ArcusReplKetamaNodeLocator) locator).getAllGroups();
+
+    for (Map.Entry<String, List<ArcusReplNodeAddress>> entry : newAllGroups.entrySet()) {
+      if (!ArcusReplNodeAddress.validateGroup(entry)) {
+        invalidGroups.add(entry.getKey());
+        continue;
+      }
+      // Handle newly added groups
+      if (!oldAllGroups.containsKey(entry.getKey())) {
+        for (ArcusReplNodeAddress newAddr : entry.getValue()) {
+          attachNodes.add(attachMemcachedNode(newAddr));
+        }
+      }
+    }
+
+    // Iterate over the existing groups and compare with the new group list
+    for (Map.Entry<String, MemcachedReplicaGroup> oldGroupEntry : oldAllGroups.entrySet()) {
+      String groupName = oldGroupEntry.getKey();
+      MemcachedReplicaGroup oldGroup = oldGroupEntry.getValue();
+      List<ArcusReplNodeAddress> newGroupAddrs = newAllGroups.get(groupName);
+
+      // If group name exists in old groups, invalid case is ignored.
+      if (invalidGroups.contains(groupName)) {
+        continue;
+      }
+
+      if (newGroupAddrs == null) {
+        // Old group nodes have disappeared. Remove the old group nodes.
+        removeNodes.add(oldGroup.getMasterNode());
+        removeNodes.addAll(oldGroup.getSlaveNodes());
+        delayedSwitchoverGroups.remove(oldGroup);
+        continue;
+      }
+
+      if (oldGroup.isDelayedSwitchover()) {
+        delayedSwitchoverGroups.remove(oldGroup);
+        switchoverMemcachedReplGroup(oldGroup.getMasterNode(), true);
+      }
+
+      MemcachedNode oldMasterNode = oldGroup.getMasterNode();
+      List<MemcachedNode> oldSlaveNodes = oldGroup.getSlaveNodes();
+
+      getLogger().debug("New group nodes : " + newGroupAddrs);
+      getLogger().debug("Old group nodes : [" + oldGroup + "]");
+
+      ArcusReplNodeAddress oldMasterAddr = (ArcusReplNodeAddress) oldMasterNode.getSocketAddress();
+      ArcusReplNodeAddress newMasterAddr = newGroupAddrs.get(0);
+      assert oldMasterAddr != null : "invalid old rgroup";
+      assert newMasterAddr != null : "invalid new rgroup";
+
+      Set<ArcusReplNodeAddress> oldSlaveAddrs = getAddrsFromNodes(oldSlaveNodes);
+      Set<ArcusReplNodeAddress> newSlaveAddrs = getSlaveAddrsFromGroupAddrs(newGroupAddrs);
+
+      if (oldMasterAddr.isSameAddress(newMasterAddr)) {
+        // add newly added slave node
+        for (ArcusReplNodeAddress newSlaveAddr : newSlaveAddrs) {
+          if (!oldSlaveAddrs.contains(newSlaveAddr)) {
+            attachNodes.add(attachMemcachedNode(newSlaveAddr));
+          }
+        }
+
+        // remove not exist old slave node
+        for (MemcachedNode oldSlaveNode : oldSlaveNodes) {
+          if (!newSlaveAddrs.contains((ArcusReplNodeAddress) oldSlaveNode.getSocketAddress())) {
+            removeNodes.add(oldSlaveNode);
+            // move operation slave -> master.
+            taskList.add(new MoveOperationTask(
+                    oldSlaveNode, oldMasterNode, false));
+          }
+        }
+      } else if (oldSlaveAddrs.contains(newMasterAddr)) {
+        oldGroup.setMasterCandidateByAddr(newMasterAddr);
+        if (newSlaveAddrs.contains(oldMasterAddr)) {
+          // Switchover
+          if (oldMasterNode.hasNonIdempotentOperationInReadQ()) {
+            // delay to change role and move operations
+            // by the time switchover timeout occurs or
+            // "SWITCHOVER", "REPL_SLAVE" response received.
+            delayedSwitchoverGroups.put(oldGroup);
+          } else {
+            changeRoleGroups.add(oldGroup);
+            taskList.add(new MoveOperationTask(
+                    oldMasterNode, oldGroup.getMasterCandidate(), false));
+            taskList.add(new QueueReconnectTask(
+                    oldMasterNode, ReconnDelay.IMMEDIATE,
+                    "Discarded all pending reading state operation to move operations."));
+          }
+        } else {
+          changeRoleGroups.add(oldGroup);
+          // Failover
+          removeNodes.add(oldMasterNode);
+          // move operation: master -> slave.
+          taskList.add(new MoveOperationTask(
+                  oldMasterNode, oldGroup.getMasterCandidate(), true));
+        }
+
+        // add newly added slave node
+        for (ArcusReplNodeAddress newSlaveAddr : newSlaveAddrs) {
+          if (!oldSlaveAddrs.contains(newSlaveAddr) && !oldMasterAddr.isSameAddress(newSlaveAddr)) {
+            attachNodes.add(attachMemcachedNode(newSlaveAddr));
+          }
+        }
+        // remove not exist old slave node
+        for (MemcachedNode oldSlaveNode : oldSlaveNodes) {
+          ArcusReplNodeAddress oldSlaveAddr
+                  = (ArcusReplNodeAddress) oldSlaveNode.getSocketAddress();
+          if (!newSlaveAddrs.contains(oldSlaveAddr) && !newMasterAddr.isSameAddress(oldSlaveAddr)) {
+            removeNodes.add(oldSlaveNode);
+            // move operation slave -> master.
+            taskList.add(new MoveOperationTask(
+                    oldSlaveNode, oldGroup.getMasterCandidate(), false));
+          }
+        }
+      } else {
+        // Old master has gone away. And, new group has appeared.
+        MemcachedNode newMasterNode = attachMemcachedNode(newMasterAddr);
+        attachNodes.add(newMasterNode);
+        for (ArcusReplNodeAddress newSlaveAddr : newSlaveAddrs) {
+          attachNodes.add(attachMemcachedNode(newSlaveAddr));
+        }
+        removeNodes.add(oldMasterNode);
+        // move operation: master -> master.
+        taskList.add(new MoveOperationTask(
+                oldMasterNode, newMasterNode, true));
+        for (MemcachedNode oldSlaveNode : oldSlaveNodes) {
+          removeNodes.add(oldSlaveNode);
+          // move operation slave -> master.
+          taskList.add(new MoveOperationTask(
+                  oldSlaveNode, newMasterNode, false));
+        }
+      }
+    }
+
+    // Update the hash.
+    ((ArcusReplKetamaNodeLocator) locator).update(attachNodes, removeNodes, changeRoleGroups);
+
+    // do task after locator update
+    for (Task task : taskList) {
+      task.doTask();
+    }
+
+    // Remove the unavailable nodes.
+    handleNodesToRemove(removeNodes);
+  }
+
   private void updateReplConnections(List<InetSocketAddress> addrs) throws IOException {
     List<MemcachedNode> attachNodes = new ArrayList<>();
     List<MemcachedNode> removeNodes = new ArrayList<>();
@@ -681,6 +840,49 @@ public final class MemcachedConnection extends SpyObject {
       }
     });
     addOperation(node, op);
+  }
+
+  // Handle the memcached server group that's been added by CacheManager.
+  void handleCacheNodesChangeTemp() throws IOException {
+    /* ENABLE_MIGRATION if */
+    /*
+     * handleCacheNodesChange() and handleAlterNodesChange() have been integrated
+     * to fix bug that occurs when Context Switching from Java Client IO Thread to ZK IO Thread
+     * is executed after handleCacheNodesChange() and before handleAlterNodesChange().
+     * If change of cache_list and alter_list are received when after handleCacheNodesChange()
+     * and before handleAlterNodesChange(), there MUST be bug because alter_list change
+     * will be applied without application of dependent cache_list change.
+     */
+    List<InetSocketAddress> alterList = alterNodesChange.getAndSet(null);
+    /* ENABLE_MIGRATION end */
+    List<InetSocketAddress> cacheList = cacheNodesChange.getAndSet(null);
+    if (cacheList != null) {
+      // Update the memcached server group.
+      /* ENABLE_REPLICATION if */
+      if (arcusReplEnabled) {
+        updateReplConnectionsTemp(cacheList);
+        return;
+      }
+      /* ENABLE_REPLICATION end */
+      updateConnections(cacheList);
+    }
+    /* ENABLE_MIGRATION if */
+    if (arcusMigrEnabled && alterList != null) {
+      if (mgState == MigrationState.PREPARED) {
+        if (!mgInProgress) {
+          // prepare connections of alter nodes
+          prepareAlterConnections(alterList);
+        } else {
+          // check joining node down
+          updateAlterConnections(alterList);
+        }
+      }
+      if (alterList.isEmpty()) { // end of migration
+        mgState = MigrationState.DONE;
+        mgInProgress = false;
+      }
+    }
+    /* ENABLE_MIGRATION end */
   }
 
   // Handle the memcached server group that's been added by CacheManager.
