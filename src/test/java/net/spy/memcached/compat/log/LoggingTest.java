@@ -4,6 +4,9 @@ package net.spy.memcached.compat.log;
 
 // XXX:  This really needs to get log4j configured first.
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

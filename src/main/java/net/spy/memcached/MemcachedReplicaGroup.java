@@ -32,6 +32,7 @@ public abstract class MemcachedReplicaGroup extends SpyObject {
   protected MemcachedNode masterCandidate;
   private final StringBuilder sb = new StringBuilder();
   private boolean delayedSwitchover = false;
+  private boolean alreadySwitched = false;
 
   public static final int MAX_REPL_SLAVE_SIZE = 2;
   public static final int MAX_REPL_GROUP_SIZE = MAX_REPL_SLAVE_SIZE + 1;
@@ -54,6 +55,14 @@ public abstract class MemcachedReplicaGroup extends SpyObject {
     }
     sb.append("]");
     return sb.toString();
+  }
+
+  public boolean isAlreadySwitched() {
+    return alreadySwitched;
+  }
+
+  public void setAlreadySwitched(boolean alreadySwitched) {
+    this.alreadySwitched = alreadySwitched;
   }
 
   public boolean isEmptyGroup() {

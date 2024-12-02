@@ -150,6 +150,9 @@ public abstract class BaseOperationImpl extends SpyObject {
     // two or more than slave nodes case : "SWITCHOVER <ip:port>", "REPL_SLAVE <ip:port>"
     String[] messages = cause.split(" ");
     MemcachedReplicaGroup group = handlingNode.getReplicaGroup();
+    if (!group.isAlreadySwitched()) {
+      group.setAlreadySwitched(true);
+    }
     if (messages.length == 1) {
       group.setMasterCandidate();
     } else if (messages.length == 2) {

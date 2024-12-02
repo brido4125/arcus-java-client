@@ -376,7 +376,11 @@ public final class MemcachedConnection extends SpyObject {
 
     Set<String> changedGroupSet = new HashSet<>();
     for (MemcachedNode node : nodes) {
-      String nodeAddr = ((InetSocketAddress) node.getSocketAddress()).toString();
+      if (node.getReplicaGroup().isAlreadySwitched()) {
+        node.getReplicaGroup().setAlreadySwitched(false);
+        continue;
+      }
+      String nodeAddr = node.getSocketAddress().toString();
       if (addrMap.remove(nodeAddr) == null) { // removed node
         changedGroupSet.add(node.getReplicaGroup().getGroupName());
       }
